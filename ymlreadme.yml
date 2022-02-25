@@ -1,14 +1,17 @@
-version: '3'
-
+version: '3' 
+## 该文件是根据官网改的 ： https://github.com/nextcloud/docker/tree/master/.examples/docker-compose/with-nginx-proxy/mariadb/fpm
+## 主要的目的是，修改容器卷目录， 把挂载卷改为 ./data/** 
+# 只需修改两个文件，就可以实现https的访问了， 这个文件是官网给的
+# db.env文件填写密码：  MYSQL_PASSWORD  
 services:
   db:
-    image: mariadb:10.5
+    image: mariadb:10.5 # 如果运行失败，可以改为mysql
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: always
     volumes:
-      - db:/var/lib/mysql
+      - ./data/db:/var/lib/mysql #这里修改了容器卷
     environment:
-      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ROOT_PASSWORD=password # 设置mysql的root密码
     env_file:
       - db.env
 
@@ -20,7 +23,7 @@ services:
     image: nextcloud:fpm-alpine
     restart: always
     volumes:
-      - nextcloud:/var/www/html
+      - ./data/nextcloud:/var/www/html #这里修改了容器卷
     environment:
       - MYSQL_HOST=db
       - REDIS_HOST=redis
@@ -34,11 +37,11 @@ services:
     build: ./web
     restart: always
     volumes:
-      - nextcloud:/var/www/html:ro
+      - ./data/nextcloud:/var/www/html:ro
     environment:
-      - VIRTUAL_HOST=
-      - LETSENCRYPT_HOST=
-      - LETSENCRYPT_EMAIL=
+      - VIRTUAL_HOST=  # 你的域名。前提是要绑定 ip地址
+      - LETSENCRYPT_HOST=  # 你的域名。前提是要绑定 ip地址
+      - LETSENCRYPT_EMAIL=  # 邮箱，理论上随便写
     depends_on:
       - app
     networks:
@@ -49,7 +52,7 @@ services:
     image: nextcloud:fpm-alpine
     restart: always
     volumes:
-      - nextcloud:/var/www/html
+      - ./data/nextcloud:/var/www/html
     entrypoint: /cron.sh
     depends_on:
       - db
@@ -59,14 +62,14 @@ services:
     build: ./proxy
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
     labels:
       com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
     volumes:
-      - certs:/etc/nginx/certs:ro
-      - vhost.d:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
+      - ./data/certs:/etc/nginx/certs:ro
+      - ./data/vhost.d:/etc/nginx/vhost.d
+      - ./data/html:/usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - proxy-tier
@@ -75,10 +78,10 @@ services:
     image: nginxproxy/acme-companion
     restart: always
     volumes:
-      - certs:/etc/nginx/certs
-      - acme:/etc/acme.sh
-      - vhost.d:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
+      - ./data/certs:/etc/nginx/certs
+      - ./data/acme:/etc/acme.sh
+      - ./data/vhost.d:/etc/nginx/vhost.d
+      - ./data/html:/usr/share/nginx/html
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - proxy-tier
@@ -100,13 +103,13 @@ services:
 #    networks:
 #      - proxy-tier
 
-volumes:
-  db:
-  nextcloud:
-  certs:
-  acme:
-  vhost.d:
-  html:
+# volumes:
+#   db:
+#   nextcloud:
+#   certs:
+#   acme:
+#   vhost.d:
+#   html:
 
 networks:
   proxy-tier:
