@@ -59,8 +59,8 @@ services:
     build: ./proxy
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "6180:80" #端口自己改， 建议保留着两个端口， 访问地址:  ip:6180
+      - "6181:443"
     labels:
       com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
     volumes:
